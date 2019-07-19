@@ -46,11 +46,28 @@ void ScreenPrint( int x, int y, const char *string )
 	CursorPosition.X = x * 2;
 	//SetConsoleCursorPosition( g_hScreen[g_nScreenIndex], CursorPosition );	
 	//WriteFile( g_hScreen[g_nScreenIndex], string, strlen( string ), &dw, NULL );
+
 	WriteConsoleOutputCharacter(g_hScreen[g_nScreenIndex], string, strlen(string), CursorPosition, &dw);
 }
 
+void ScreenColorPrint(int x, int y, const char* string, WORD attr)
+{
+	DWORD dw;
+	COORD CursorPosition = { x, y };
+	CursorPosition.X = x * 2;
+	//SetConsoleCursorPosition( g_hScreen[g_nScreenIndex], CursorPosition );	
+	//WriteFile( g_hScreen[g_nScreenIndex], string, strlen( string ), &dw, NULL );
+
+	WriteConsoleOutputAttribute(g_hScreen[g_nScreenIndex], &attr, strlen(string), CursorPosition, &dw);
+	WriteConsoleOutputCharacterA(g_hScreen[g_nScreenIndex], string, strlen(string), CursorPosition, &dw);
+}
+
 // 1 ~ 15 까지 색상 설정 가능
-void SetColor( unsigned short color )
+void SetColor(int x, int y, unsigned short color, const char *string )
 {		
-	SetConsoleTextAttribute( g_hScreen[g_nScreenIndex], color );
+	//SetConsoleTextAttribute( g_hScreen[g_nScreenIndex], color );
+	DWORD dw;
+	COORD CursorPosition = { x, y };
+	CursorPosition.X = x * 2;
+	
 }
