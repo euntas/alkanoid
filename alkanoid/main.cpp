@@ -183,22 +183,27 @@ bool IsCollision(int x, int y)
 	int nCount = 0;
 
 	// 공과 벽돌의 충돌
-	for (int row = 0; row < BLOCK_ROW; row++)
+	int tempX = x;
+	if (g_Ball.getNDirect() == LEFT_DOWN || g_Ball.getNDirect() == LEFT_TOP)
 	{
-		for (int col = 0; col < BLOCK_COL; col++)
+		tempX = x + 1;
+	}
+
+	if (g_Ball.getNDirect() == RIGHT_DOWN || g_Ball.getNDirect() == RIGHT_TOP)
+	{
+		tempX = x - 1;
+	}
+
+	if (tempX - 1 < BLOCK_COL && tempX - 1 > 0 && y - 1 < BLOCK_ROW && y - 1 > 0)
+	{
+		if (g_Block[y - 1][tempX - 1]->getNLife() == 1)
 		{
-			if (g_Block[row][col]->getNLife() == 1)
+			if (((g_Block[y - 1][tempX - 1]->getNX() == tempX) || (g_Block[y - 1][tempX - 1]->getNX() == tempX + 1)) && (g_Block[y - 1][tempX - 1]->getNY() == y))
 			{
-				if (y == g_Block[row][col]->getNY()) 
-				{
-					if ((g_Block[row][col]->getNX() == x ) && (g_Block[row][col]->getNX() + 1 == x+1))
-					{
-						g_Ball.setNDirect((DIRECT)g_StateBlock[currentDirect]);
-						g_Block[row][col]->setNLife(0);
-						blockNum--;
-						nCount++;
-					}
-				}
+				g_Ball.setNDirect((DIRECT)g_StateBlock[currentDirect]);
+				g_Block[y - 1][tempX - 1]->setNLife(0);
+				blockNum--;
+				nCount++;
 			}
 		}
 	}
@@ -244,7 +249,10 @@ bool IsCollision(int x, int y)
 
 	if (y > BORDER_DOWN) // 아래
 	{
-		g_Ball.setNDirect((DIRECT)g_StateTable[WALL_DOWN][currentDirect]);
+		g_Ball.setNX(g_Bar.getNX());
+		g_Ball.setNY(g_Bar.getNY()-1);
+		g_Ball.setNReady(1);
+		g_Ball.setNDirect(RIGHT_TOP);
 		return true;
 	}
 
