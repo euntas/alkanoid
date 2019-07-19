@@ -43,8 +43,10 @@ void ScreenPrint( int x, int y, const char *string )
 {
 	DWORD dw;
 	COORD CursorPosition = { x, y };
-	SetConsoleCursorPosition( g_hScreen[g_nScreenIndex], CursorPosition );	
-	WriteFile( g_hScreen[g_nScreenIndex], string, strlen( string ), &dw, NULL );
+	CursorPosition.X = x * 2;
+	//SetConsoleCursorPosition( g_hScreen[g_nScreenIndex], CursorPosition );	
+	//WriteFile( g_hScreen[g_nScreenIndex], string, strlen( string ), &dw, NULL );
+	WriteConsoleOutputCharacter(g_hScreen[g_nScreenIndex], string, strlen(string), CursorPosition, &dw);
 }
 
 // 1 ~ 15 까지 색상 설정 가능
