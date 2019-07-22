@@ -134,7 +134,12 @@ public:
 
 	void DrawBlock()
 	{
-		ScreenPrint(nX, nY, "▩");
+		if (nLife == 1) {
+			ScreenPrint(nX, nY, "▒");
+		}
+		else if (nLife == 2) {
+			ScreenPrint(nX, nY, "▩");
+		}
 	}
 };
 
@@ -149,7 +154,7 @@ private:
 	clock_t  OldTime;	 // 이전 이동 시각
 
 public:
-	Ball() :nReady(1), nHP(3), nX(10), nY(20), nDirect(RIGHT_TOP), OldTime(clock()), MoveTime(200)
+	Ball() :nReady(1), nHP(3), nX(10), nY(20), nDirect(RIGHT_TOP), OldTime(clock()), MoveTime(150)
 	{
 
 	}
@@ -278,9 +283,11 @@ Ball g_Ball;
 Block* g_Block[HEIGHT+1][WIDTH+1];
 Item* g_item[100];		// 임의로 100개
 int itemIdx = -1; 
-int blockNum = 0;  // 현재 존재하는 블럭 수
+int blockNum = 0;  // 현재 존재하는 블럭 수 (정확히는 존재하는 블럭의 life 수)
 
 MapInfo g_MapInfo[HEIGHT + 1][WIDTH + 1];
+
+bool g_StageInitInfo[3] = { false, false, false }; // 스테이지 별 초기화를 위한 플래그 (false일 경우 한번만 초기화 해준다.)
 
 int g_nGrade = 0;
 int g_nTotalGrade = 0;
@@ -305,12 +312,12 @@ bool IsCollision(int x, int y)
 		tempX = x - 1;
 	}
 	
-	if (g_Block[y][tempX]->getNLife() == 1 && g_Block[y][tempX]->getNY() == y)
+	if (g_Block[y][tempX]->getNLife() >= 1 && g_Block[y][tempX]->getNY() == y)
 	{
 		if (g_Block[y][tempX]->getNX() == tempX || g_Block[y][tempX]->getNX() + 1 == tempX)
 		{
 			g_Ball.setNDirect((DIRECT)g_StateBlock[currentDirect]);
-			g_Block[y][tempX]->setNLife(0);
+			g_Block[y][tempX]->setNLife(g_Block[y][tempX]->getNLife() - 1);
 			blockNum--;
 			nCount++;
 			g_nGrade += 10;
@@ -323,12 +330,12 @@ bool IsCollision(int x, int y)
 			}
 		}
 	}
-	else if (g_Block[y][x]->getNLife() == 1 &&g_Block[y][tempX]->getNY() == y)
+	else if (g_Block[y][x]->getNLife() >= 1 &&g_Block[y][tempX]->getNY() == y)
 	{
 		if (g_Block[y][x]->getNX() == x || g_Block[y][x]->getNX()+1 == x )
 		{
 			g_Ball.setNDirect((DIRECT)g_StateBlock[currentDirect]);
-			g_Block[y][x]->setNLife(0);
+			g_Block[y][x]->setNLife(g_Block[y][x]->getNLife() - 1);
 			blockNum--;
 			nCount++;
 			g_nGrade += 10;
@@ -577,7 +584,7 @@ void Init()
 	{
 		g_nStage = 0;
 
-		// 블록
+		// 블록 초기화
 		for (int row = 0; row <= HEIGHT; row++)
 		{
 			for (int col = 0; col <= WIDTH; col++)
@@ -586,29 +593,165 @@ void Init()
 			}
 		}
 
+		g_nGrade = 0;
+	}
+
+	if (g_nStage == 0 && !g_StageInitInfo[0]) // 스테이지 1일때 초기화
+	{
+		itemIdx = -1;
+		blockNum = 0;
+		g_StageInitInfo[0] = true;
+
 		// 스테이지에 맞는 블럭, 아이템 설정
-		for (int row = 3; row <= BLOCK_ROW + 1; row++)
-		{
-			for (int col = 10; col <= BLOCK_COL - 8; col++)
-			{
-				g_Block[row][col]->setNLife(1);
-				blockNum++;
+		//for (int row = 3; row <= BLOCK_ROW + 1; row++)
+		//{
+		//	for (int col = 10; col <= BLOCK_COL - 8; col++)
+		//	{
+		//		g_Block[row][col]->setNLife(1);
+		//		blockNum++;
 
-				/*g_item[++itemIdx] = new Item(col, row, ITEM_EXPAND);
-				g_MapInfo[row][col].setItemIdx(itemIdx);*/
-			}
-		}
+		//		/*g_item[++itemIdx] = new Item(col, row, ITEM_EXPAND);
+		//		g_MapInfo[row][col].setItemIdx(itemIdx);*/
+		//	}
+		//}
 
-		g_item[++itemIdx] = new Item(10, 3, ITEM_SLOW);
+		g_Block[3][8]->setNLife(2);
+		blockNum += 2;
+
+		g_Block[3][10]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[3][12]->setNLife(2);
+		blockNum += 2;
+
+		g_Block[3][14]->setNLife(1);
+		blockNum += 1;
+
+		g_item[++itemIdx] = new Item(8, 3, ITEM_SLOW);
+		g_MapInfo[3][8].setItemIdx(itemIdx);
+
+		g_item[++itemIdx] = new Item(10, 3, ITEM_EXPAND);
 		g_MapInfo[3][10].setItemIdx(itemIdx);
-
-		g_item[++itemIdx] = new Item(11, 3, ITEM_EXPAND);
-		g_MapInfo[3][11].setItemIdx(itemIdx);
 
 		g_item[++itemIdx] = new Item(12, 3, ITEM_FAST);
 		g_MapInfo[3][12].setItemIdx(itemIdx);
 
-		g_nGrade = 0;
+		g_item[++itemIdx] = new Item(14, 3, ITEM_SHORTEN);
+		g_MapInfo[3][14].setItemIdx(itemIdx);
+	}
+	else if (g_nStage == 1 && !g_StageInitInfo[1]) // 스테이지 2일때 초기화
+	{
+		itemIdx = -1;
+		blockNum = 0;
+		g_StageInitInfo[1] = true;
+
+		g_Block[3][10]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[3][12]->setNLife(2);
+		blockNum += 2;
+
+		g_Block[3][14]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[2][10]->setNLife(2);
+		blockNum += 2;
+
+		g_Block[2][14]->setNLife(2);
+		blockNum += 2;
+
+		g_item[++itemIdx] = new Item(10, 3, ITEM_SLOW);
+		g_MapInfo[3][10].setItemIdx(itemIdx);
+
+		g_item[++itemIdx] = new Item(12, 3, ITEM_EXPAND);
+		g_MapInfo[3][12].setItemIdx(itemIdx);
+
+		g_item[++itemIdx] = new Item(14, 3, ITEM_FAST);
+		g_MapInfo[3][14].setItemIdx(itemIdx);
+	}
+	else if (g_nStage == 2 && !g_StageInitInfo[2]) // 스테이지 2일때 초기화
+	{
+		itemIdx = -1;
+		blockNum = 0;
+		g_StageInitInfo[2] = true;
+
+		g_Block[2][6]->setNLife(2);
+		blockNum += 2;
+
+		g_Block[2][8]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[2][10]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[2][12]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[2][14]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[2][16]->setNLife(2);
+		blockNum += 2;
+
+		g_Block[3][6]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[3][16]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[4][6]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[4][10]->setNLife(2);
+		blockNum += 2;
+
+		g_Block[4][12]->setNLife(2);
+		blockNum += 2;
+
+		g_Block[4][16]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[5][6]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[5][16]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[6][6]->setNLife(2);
+		blockNum += 2;
+
+		g_Block[6][8]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[6][10]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[6][12]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[6][14]->setNLife(1);
+		blockNum += 1;
+
+		g_Block[6][16]->setNLife(2);
+		blockNum += 2;
+
+		g_item[++itemIdx] = new Item(6, 2, ITEM_SLOW);
+		g_MapInfo[2][6].setItemIdx(itemIdx);
+
+		g_item[++itemIdx] = new Item(6, 6, ITEM_SLOW);
+		g_MapInfo[6][6].setItemIdx(itemIdx);
+
+		g_item[++itemIdx] = new Item(10, 4, ITEM_EXPAND);
+		g_MapInfo[4][10].setItemIdx(itemIdx);
+
+		g_item[++itemIdx] = new Item(16, 2, ITEM_FAST);
+		g_MapInfo[2][16].setItemIdx(itemIdx);
+
+		g_item[++itemIdx] = new Item(12, 4, ITEM_FAST);
+		g_MapInfo[4][12].setItemIdx(itemIdx);
+
+		g_item[++itemIdx] = new Item(16, 6, ITEM_FAST);
+		g_MapInfo[6][16].setItemIdx(itemIdx);
 	}
 
 	// 아이템
@@ -622,8 +765,12 @@ void Init()
 	g_Ball.setNX(10);
 	g_Ball.setNY(20 + 1);
 	g_Ball.setOldTime(clock());
+	g_Ball.setNReady(1);
+	g_Ball.setNDirect(RIGHT_TOP);
+	g_Ball.setMoveTime(150);
 
 	// 플레이어
+	g_Bar.setLength(3);
 	g_Bar.setNX(g_Ball.getNX());
 	g_Bar.setNY(g_Ball.getNY() + 1);
 	g_Bar.setOldTime(clock());
@@ -644,11 +791,9 @@ void Update()
 		break;
 
 	case RUNNING:
-		//g_RemainTime = (g_StageInfo[g_nStage].LimitTime - (CurTime - g_GameStartTime)) / 1000; // 게임 진행 남은 시간
-		g_RemainTime = (60*1000 - (CurTime - g_GameStartTime)) / 1000; // 게임 진행 남은 시간
+		g_RemainTime = ((g_nStage + 1)*60*1000 - (CurTime - g_GameStartTime)) / 1000; // 게임 진행 남은 시간
 
-		//if ((CurTime - g_GameStartTime) > g_StageInfo[g_nStage].LimitTime || g_nBlockCount == g_StageInfo[g_nStage].nBlockCount)
-		if ((CurTime - g_GameStartTime) > 60 * 1000 || blockNum == 0)
+		if ((CurTime - g_GameStartTime) > (g_nStage + 1) * 60 * 1000 || blockNum == 0)
 		{
 			g_nGameState = STOP;
 			return;
@@ -727,7 +872,8 @@ void Update()
 						break;
 
 					case ITEM_FAST:
-						g_Ball.setMoveTime(g_Ball.getMoveTime() - 100);
+						if (g_Ball.getMoveTime() > 100)
+							g_Ball.setMoveTime(g_Ball.getMoveTime() - 100);
 						break;
 
 					case ITEM_EXPAND:
@@ -760,17 +906,25 @@ void Update()
 		break;
 
 	case STOP:
+
+		g_nTotalGrade += g_nGrade;
+		g_nGrade = 0;
+
 		// 성공이냐 실패를 판단해주어서 출력을 해주는 부분이 와야 한다.  
-		//if (g_nBlockCount == g_StageInfo[g_nStage].nBlockCount && g_sBall.nHP > 0 && g_RemainTime > 0)
-		if (blockNum == 0)
+		if (blockNum == 0 && g_Ball.getNHP() > 0 && g_RemainTime > 0)
 		{
+			if (g_nStage == 2) // 마지막 스테이지 성공이면 결과 화면으로
+			{
+				g_nGameState = RESULT;
+				break;
+			}
 			g_UpdateOldTime = CurTime;
 			g_nGameState = SUCCESS;
-			g_nTotalGrade += g_nGrade;
 		}
 		else {
 			g_nGameState = FAILED;
 		}
+
 		break;
 
 	case SUCCESS:
@@ -819,11 +973,29 @@ void Render()
 		sprintf(string, "남은 시간 : %d 분 %d 초", g_RemainTime / 60, g_RemainTime % 60);
 		ScreenPrint(45, 8, string);
 
+		sprintf(string, "▒ : 1회 충돌 필요 ");
+		ScreenPrint(45, 12, string);
+
+		sprintf(string, "▩ : 2회 충돌 필요 ");
+		ScreenPrint(45, 14, string);
+
+		sprintf(string, "☆ : 공 느리게 ");
+		ScreenPrint(45, 18, string);
+
+		sprintf(string, "★ : 공 빠르게 ");
+		ScreenPrint(45, 20, string);
+
+		sprintf(string, "◆ : Bar 길이 늘리기 ");
+		ScreenPrint(45, 22, string);
+
+		sprintf(string, "◇ : Bar 길이 줄이기 ");
+		ScreenPrint(45, 24, string);
+
 		for (int row = 0; row < HEIGHT; row++)
 		{
 			for (int col = 0; col < WIDTH; col++)
 			{
-				if (g_Block[row][col]->getNLife() == 1)
+				if (g_Block[row][col]->getNLife() >= 1)
 					g_Block[row][col]->DrawBlock();
 
 				for (int i = 0; i <= itemIdx; i++)
