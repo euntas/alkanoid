@@ -985,10 +985,10 @@ void Render()
 		sprintf(string, "★ : 공 빠르게 ");
 		ScreenPrint(45, 20, string);
 
-		sprintf(string, "◆ : Bar 길이 늘리기 ");
+		sprintf(string, "◇ : Bar 길이 늘리기 ");
 		ScreenPrint(45, 22, string);
 
-		sprintf(string, "◇ : Bar 길이 줄이기 ");
+		sprintf(string, "◆ : Bar 길이 줄이기 ");
 		ScreenPrint(45, 24, string);
 
 		for (int row = 0; row < HEIGHT; row++)
