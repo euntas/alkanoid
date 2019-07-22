@@ -5,6 +5,8 @@ static HANDLE g_hScreen[2];
 
 void ScreenInit()
 {
+	system("mode con: cols=120 lines=30");
+
 	CONSOLE_CURSOR_INFO cci;
 	
 	// 가상의 콘솔창 2개룰 만든다.
