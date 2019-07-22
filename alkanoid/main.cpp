@@ -11,6 +11,8 @@ typedef enum _GAME_STATE { INIT, READY, RUNNING, SUCCESS, FAILED, STOP, RESULT }
 typedef enum _DIRECT { TOP, RIGHT_TOP, RIGHT_DOWN, DOWN, LEFT_DOWN, LEFT_TOP } DIRECT;
 typedef enum _WALL { WALL_TOP, WALL_RIGHT, WALL_DOWN, WALL_LEFT } WALL;
 
+typedef enum _ITEMSORT {ITEM_SLOW, ITEM_FAST, ITEM_EXPAND, ITEM_SHORTEN} ITEMSORT;
+
 #define BLOCK_ROW 2
 #define BLOCK_COL 20
 
@@ -30,6 +32,80 @@ int g_StateTable[4][6] = { // 벽과 충돌하게 되면 방향 상태
 };
 
 int g_StateBlock[6] = { 3, 2, 1, 0, 5, 4 }; // 블럭과 충돌하게 되면 방향 상태
+
+class Item
+{
+private:
+	int		 originX, originY; // 처음 좌표
+	int		 nX, nY;     // 좌표
+	ITEMSORT sort;
+	int nLife;
+	clock_t OldTime;
+	clock_t MoveTime;
+
+public:
+	Item(int x, int y, ITEMSORT _sort)
+	{
+		originX = x;
+		originY = y;
+		nX = x; 
+		nY = y;
+		sort = _sort;
+		nLife = 0;
+		OldTime = clock();
+		MoveTime = 300;
+	}
+
+	int getOriginX() { return originX; }
+	void setOriginX(int _nX) { originX = _nX; }
+	int getOriginY() { return originY; }
+	void setOriginY(int _nY) { originY = _nY; }
+	int getNX() { return nX; }
+	void setNX(int _nX) { nX = _nX; }
+	int getNY() { return nY; }
+	void setNY(int _nY) { nY = _nY; }
+	ITEMSORT getSort() { return sort; }
+	void setSort(ITEMSORT _sort) { sort = _sort; }
+	int getNLife() { return nLife; }
+	void setNLife(int _life) { nLife = _life; }
+	clock_t getOldTime() { return OldTime; }
+	void setOldTime(clock_t time) { OldTime = time; }
+	clock_t getMoveTime() { return MoveTime; }
+	void setMoveTime(clock_t time) { MoveTime = time; }
+
+	void DrawSlowItem()
+	{
+		ScreenPrint(nX, nY, "☆");
+	}
+
+	void DrawFastItem()
+	{
+		ScreenPrint(nX, nY, "★");
+	}
+
+	void DrawExpandItem()
+	{
+		ScreenPrint(nX, nY, "◇");
+	}
+
+	void DrawShortenItem()
+	{
+		ScreenPrint(nX, nY, "◆");
+	}
+
+	bool IsOriginPOS()
+	{
+		if (nX == originX && nY == originY)
+			return true;
+		else
+			return false;
+	}
+
+	void MoveDown()
+	{
+		nY += 1;
+	}
+};
 
 class Block
 {
@@ -180,10 +256,32 @@ public:
 	}
 };
 
+class MapInfo
+{
+private:
+	int blockIdx;
+	int itemIdx;
+
+public:
+	MapInfo()
+	{
+		itemIdx = -1;
+	}
+	int getBlockIdx() { return blockIdx; }
+	void setBlockIdx(int idx) { blockIdx = idx; }
+	int getItemIdx() { return itemIdx; }
+	void setItemIdx(int idx) { itemIdx = idx; }
+};
+
 Bar  g_Bar;
 Ball g_Ball;
 Block* g_Block[HEIGHT+1][WIDTH+1];
+Item* g_item[100];		// 임의로 100개
+int itemIdx = -1; 
 int blockNum = 0;  // 현재 존재하는 블럭 수
+
+MapInfo g_MapInfo[HEIGHT + 1][WIDTH + 1];
+
 int g_nGrade = 0;
 int g_nTotalGrade = 0;
 int g_nStage = -1;
@@ -216,6 +314,13 @@ bool IsCollision(int x, int y)
 			blockNum--;
 			nCount++;
 			g_nGrade += 10;
+
+			// 아이템 생명
+			if (g_MapInfo[y][tempX].getItemIdx() != -1)
+			{
+				g_item[g_MapInfo[y][tempX].getItemIdx()]->setOldTime(clock());
+				g_item[g_MapInfo[y][tempX].getItemIdx()]->setNLife(1);
+			}
 		}
 	}
 	else if (g_Block[y][x]->getNLife() == 1 &&g_Block[y][tempX]->getNY() == y)
@@ -227,6 +332,12 @@ bool IsCollision(int x, int y)
 			blockNum--;
 			nCount++;
 			g_nGrade += 10;
+
+			if (g_MapInfo[y][x].getItemIdx() != -1)
+			{
+				g_item[g_MapInfo[y][x].getItemIdx()]->setOldTime(clock());
+				g_item[g_MapInfo[y][x].getItemIdx()]->setNLife(1);
+			}
 		}
 	}
 	
@@ -475,16 +586,35 @@ void Init()
 			}
 		}
 
+		// 스테이지에 맞는 블럭, 아이템 설정
 		for (int row = 3; row <= BLOCK_ROW + 1; row++)
 		{
 			for (int col = 10; col <= BLOCK_COL - 8; col++)
 			{
 				g_Block[row][col]->setNLife(1);
 				blockNum++;
+
+				/*g_item[++itemIdx] = new Item(col, row, ITEM_EXPAND);
+				g_MapInfo[row][col].setItemIdx(itemIdx);*/
 			}
 		}
 
+		g_item[++itemIdx] = new Item(10, 3, ITEM_SLOW);
+		g_MapInfo[3][10].setItemIdx(itemIdx);
+
+		g_item[++itemIdx] = new Item(11, 3, ITEM_EXPAND);
+		g_MapInfo[3][11].setItemIdx(itemIdx);
+
+		g_item[++itemIdx] = new Item(12, 3, ITEM_FAST);
+		g_MapInfo[3][12].setItemIdx(itemIdx);
+
 		g_nGrade = 0;
+	}
+
+	// 아이템
+	for (int idx = 0; idx <= itemIdx; idx++)
+	{
+		g_item[idx]->setNLife(0);
 	}
 
 	// 공
@@ -572,6 +702,61 @@ void Update()
 				}
 			}
 		}
+
+		// item  움직임 위함
+		for (int i = 0; i <= itemIdx; i++)
+		{
+			// 바닥 아래로 가면 없앤다.
+			if (g_item[i]->getNY() > BORDER_DOWN)
+			{
+				g_item[i]->setNLife(0);
+			}
+
+			// bar와 충돌하면 해당 아이템 실행
+			int half = g_Bar.getLength() / 2;
+			if (g_item[i]->getNY() == g_Bar.getNY() - 1 && g_item[i]->getNLife() == 1)
+			{
+				int x = g_item[i]->getNX();
+
+				if ((x >= g_Bar.getNX() - (half)) && (x <= g_Bar.getNX() + (half)))
+				{
+					switch (g_item[i]->getSort())
+					{
+					case ITEM_SLOW:
+						g_Ball.setMoveTime(g_Ball.getMoveTime() + 100);
+						break;
+
+					case ITEM_FAST:
+						g_Ball.setMoveTime(g_Ball.getMoveTime() - 100);
+						break;
+
+					case ITEM_EXPAND:
+						g_Bar.setLength(g_Bar.getLength() + 2);
+						break;
+
+					case ITEM_SHORTEN:
+						if (g_Bar.getLength() > 3)
+							g_Bar.setLength(g_Bar.getLength() - 2);
+						break;
+					}
+
+					g_item[i]->setNLife(0);
+					g_MapInfo[g_item[i]->getNY()][g_item[i]->getNX()].setItemIdx(-1);
+				}
+
+			}
+
+			if (CurTime - g_item[i]->getOldTime() > g_item[i]->getMoveTime())
+			{
+				g_item[i]->setOldTime(CurTime);
+
+				//if (!IsItemCollision(g_item[i], g_item[i]) && g_item[i]->getNLife() == 1 && !g_item[i]->IsOriginPOS())
+				if (g_item[i]->getNLife() == 1)
+				{
+					g_item[i]->MoveDown();
+				}
+			}
+		}
 		break;
 
 	case STOP:
@@ -640,6 +825,31 @@ void Render()
 			{
 				if (g_Block[row][col]->getNLife() == 1)
 					g_Block[row][col]->DrawBlock();
+
+				for (int i = 0; i <= itemIdx; i++)
+				{
+					if (g_item[i]->getNLife() == 1 && !g_item[i]->IsOriginPOS())
+					{
+						switch (g_item[i]->getSort())
+						{
+						case ITEM_SLOW:
+							g_item[i]->DrawSlowItem();
+							break;
+
+						case ITEM_FAST:
+							g_item[i]->DrawFastItem();
+							break;
+
+						case ITEM_EXPAND:
+							g_item[i]->DrawExpandItem();
+							break;
+
+						case ITEM_SHORTEN:
+							g_item[i]->DrawShortenItem();
+							break;
+						}
+					}
+				}
 			}
 		}
 
